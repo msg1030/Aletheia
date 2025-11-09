@@ -163,9 +163,12 @@ class LoadDataset(Dataset):
 
         entropy = torch.cat(entropy_list, dim=0).view(tensor.shape[2], tensor.shape[3])
 
-        return entropy.cpu().numpy()
+        entropy = entropy.cpu().numpy()  # [H,W]
+        entropy = entropy[np.newaxis, ...]  # [1,H,W]
+        
+        return entropy
 
-def __len__(self):
+    def __len__(self):
         return len(self.patches)
 
     def __getitem__(self, idx):
