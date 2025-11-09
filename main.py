@@ -9,14 +9,14 @@ import torch
 import numpy as np
 
 
-mode = 'img' 
-# mode = 'entropy'
+#mode = 'img' 
+mode = 'entropy'
 patch_size = 64
 window_size = 9
 num_bins = 16
 emb_dim = 64
-epochs = 3
-batch_size = 1000
+epochs = 300
+batch_size = 40000
 num_workers = 0 
 lr = 1e-4
 

@@ -141,22 +141,31 @@ class LoadDataset(Dataset):
 
         unfolded = F.unfold(tensor, kernel_size=window_size, padding=pad)
         local_patches = unfolded.squeeze(0).T.contiguous()  # [H*W, K*K]
-    
-        bins = torch.linspace(0, 1, num_bins + 1, device=tensor.device)
-        hist = torch.bucketize(local_patches, bins) - 1
-        hist = hist.clamp(min=0, max=num_bins-1)
 
-        H = torch.zeros(local_patches.shape[0], num_bins, device=tensor.device)
-        H.scatter_add_(1, hist, torch.ones_like(hist, dtype=torch.float32))
-        H /= H.sum(dim=1, keepdim=True)
-    
-        # -Σ p log2(p)
-        entropy = -(H * torch.log2(H + 1e-9)).sum(dim=1)
-        entropy = entropy.view(tensor.shape[2], tensor.shape[3])
-    
+        step = 1024 
+        entropy_list = []
+
+        bins = torch.linspace(0, 1, num_bins + 1, device=tensor.device)
+
+        for start in range(0, local_patches.shape[0], step):
+            end = min(start + step, local_patches.shape[0])
+            patch_chunk = local_patches[start:end, :]
+
+            hist = torch.bucketize(patch_chunk, bins) - 1
+            hist = hist.clamp(min=0, max=num_bins-1)
+
+            H = torch.zeros(patch_chunk.shape[0], num_bins, device=tensor.device)
+            H.scatter_add_(1, hist, torch.ones_like(hist, dtype=torch.float32))
+            H /= H.sum(dim=1, keepdim=True)
+
+            entropy_chunk = -(H * torch.log2(H + 1e-9)).sum(dim=1)
+            entropy_list.append(entropy_chunk)
+
+        entropy = torch.cat(entropy_list, dim=0).view(tensor.shape[2], tensor.shape[3])
+
         return entropy.cpu().numpy()
 
-    def __len__(self):
+def __len__(self):
         return len(self.patches)
 
     def __getitem__(self, idx):
