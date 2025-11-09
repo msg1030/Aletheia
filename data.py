@@ -28,11 +28,11 @@ def read_img(main_dir, jgw_name, tif_name, crs='EPSG:4326'):
     return img, profile
 
 class K5:
-    main_dir1 = '../data/2. InSAR pair 영상_K5_미국 샌프란시스코/K5_20220129135232_000010_46340_A_ES05_HH_SCS_B_L1A'
+    main_dir1 = '../data/K5_20220129135232_000010_46340_A_ES05_HH_SCS_B_L1A'
     tif_name1 = 'K5_20220129135232_000010_46340_A_ES05_HH_SCS_B_L1A_GIM.tif'
     jgw_name1 = 'K5_20220129135232_000010_46340_A_ES05_HH_SCS_B_L1A_br.jgw'
 
-    main_dir2 = '../data/2. InSAR pair 영상_K5_미국 샌프란시스코/K5_20220226135243_000010_46761_A_ES05_HH_SCS_B_L1A'
+    main_dir2 = '../data/K5_20220226135243_000010_46761_A_ES05_HH_SCS_B_L1A'
     tif_name2 = 'K5_20220226135243_000010_46761_A_ES05_HH_SCS_B_L1A_GIM.tif'
     jgw_name2 = 'K5_20220226135243_000010_46761_A_ES05_HH_SCS_B_L1A_br.jgw'
 
@@ -45,7 +45,7 @@ class K5:
 
 
 class K3:
-    main_dir1 = '../data/1. 광학 입체영상_K3_미국 샌프란시스코/K3_20220123211603_51687_16811282_L1R'
+    main_dir1 = '../data/K3_20220123211603_51687_16811282_L1R'
     b_tif_name1 = 'K3_20220123211603_51687_16811282_L1R_B.tif'
     g_tif_name1 = 'K3_20220123211603_51687_16811282_L1R_G.tif'
     n_tif_name1 = 'K3_20220123211603_51687_16811282_L1R_N.tif'
@@ -53,7 +53,7 @@ class K3:
     r_tif_name1 = 'K3_20220123211603_51687_16811282_L1R_R.tif'
     jgw_name1 = 'K3_20220123211603_51687_16811282_L1R_br.jgw'
 
-    main_dir2 = '../data/1. 광학 입체영상_K3_미국 샌프란시스코/K3_20220123211718_51687_16811282_L1R'
+    main_dir2 = '../data/K3_20220123211718_51687_16811282_L1R'
     b_tif_name2 = 'K3_20220123211718_51687_16811282_L1R_B.tif'
     g_tif_name2 = 'K3_20220123211718_51687_16811282_L1R_G.tif'
     n_tif_name2 = 'K3_20220123211718_51687_16811282_L1R_N.tif'
