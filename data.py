@@ -163,7 +163,7 @@ class LoadDataset(Dataset):
         return patches
 
     def cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32, tile_size=2048):
-        tensor = tensor / tensor.max()
+        tensor = torch.from_numpy(img).float().to(device)
         tensor = tensor.unsqueeze(0)  # [1,1,H,W]
 
         _, _, H, W = tensor.shape
