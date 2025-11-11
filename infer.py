@@ -42,11 +42,11 @@ def cosine_similarity(target_embs, vaild_embs, batch_size=1000):
 
 mode = 'img'
 #mode = 'entropy'
-model_path = "../checkpoints/img_230.pt"
-patch_size = 64 
-emb_dim = 256
+model_path = "../checkpoints/img_100.pt"
+patch_size = 16 
+emb_dim = 128 
 window_size = 15
-num_bins = 128
+num_bins = 64
 
 device = torch.device("cuda")
 model = EncoderModel(patch_size, emb_dim)
