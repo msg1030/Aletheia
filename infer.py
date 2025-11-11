@@ -65,15 +65,16 @@ vaild_embs  = torch.stack(vaild_embs)   # [M, D]
 
 print(f"target_embs: {target_embs.shape}, vaild_embs: {vaild_embs.shape}")
 
-similarity = cosine_similarity(target_embs, vaild_embs, batch_size=1000)
+similarity = torch.zeros(len(target_patches), len(vaild_patches))
+for i, t_emb in enumerate(target_embs):
+    similarity[i] = F.cosine_similarity(t_emb.unsqueeze(0), vaild_embs, dim=-1)
 
-sim_map = similarity.mean(dim=0).cpu().numpy()
+sim_map = similarity[0].cpu().numpy()
 
-N = sim_map.size
-side = int(np.ceil(np.sqrt(N)))
-
-sim_map_2d = np.zeros((side, side), dtype=sim_map.dtype)
-sim_map_2d.flat[:N] = sim_map
+valid_rows = int(np.sqrt(len(vaild_patches)))
+valid_cols = valid_rows
+sim_map_2d = np.zeros((valid_rows, valid_cols), dtype=sim_map.dtype)
+sim_map_2d.flat[:len(vaild_patches)] = sim_map
 
 plt.figure(figsize=(6, 6))
 plt.imshow(sim_map_2d, cmap="hot")
