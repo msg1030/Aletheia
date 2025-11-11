@@ -198,7 +198,7 @@ class LoadDataset(Dataset):
 class VaildStep:
     def valid_patchs(mode='img', device='cuda', patch_size: int=64, window_size=9, num_bins=32):
         (img1, profile1) = read_img(K3.main_dir1, K3.jgw_name1, K3.b_tif_name1);
-        (img2, profile2) = read_img(K5.main_dir1, K5.jgw_name1, K5.tif_name1);
+        (img2, profile2) = read_img(K3.main_dir1, K3.jgw_name1, K5.r_tif_name1);
         target_patches = VaildStep._preprocess(img1, mode, device, patch_size, window_size, num_bins)
         vaild_patches = VaildStep._preprocess(img2, mode, device, patch_size, window_size, num_bins)
 
