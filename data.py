@@ -89,7 +89,7 @@ class LoadDataset(Dataset):
             img = img[np.newaxis, ...].astype(np.float32)
             img = self._crop_nonzero_region(img)
             if mode == 'entropy':
-                img = self._cal_entropy(img, device, window_size, num_bins)
+                img = self._cal_entropy(img, window_size, num_bins)
             patches = self._split_into_patches(img, patch_size)
             self.patches.append(patches)
         self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
