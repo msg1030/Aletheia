@@ -8,8 +8,8 @@ import torch
 import numpy as np
 
 
-#mode = 'img' 
-mode = 'entropy'
+mode = 'img' 
+#mode = 'entropy'
 patch_size = 64 
 window_size = 15
 num_bins = 128
