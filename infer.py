@@ -28,4 +28,4 @@ model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval() 
 
-target_patches, vaild_patches = VaildStep.valid_patchs
+target_patches, vaild_patches = VaildStep.valid_patchs()
