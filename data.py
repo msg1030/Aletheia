@@ -231,6 +231,6 @@ class VaildStep:
 
         patches = torch.tensor(patches, device='cuda')
         if mode == 'img':
-            self.patches = self.patches.float() / self.patches.max()
+            patches = patches.float() / patches.max()
 
         return patches 
