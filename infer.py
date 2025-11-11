@@ -13,12 +13,20 @@ def infer_forward(model, tensor, device):
 
     return z.squeeze(0)
 
-
-def cosine_similarity(z1, z2):
-    cos_sim = F.cosine_similarity(z1, z2, dim=-1)
-
-    return cos_sim.mean().item()
-
+def cosine_similarity(target_embs, vaild_embs, batch_size=1000):
+    similarities = []
+    with torch.no_grad():
+        for i in range(0, vaild_embs.size(0), batch_size):
+            v_batch = vaild_embs[i:i+batch_size]
+            sim = F.cosine_similarity(
+                target_embs.unsqueeze(1),  
+                v_batch.unsqueeze(0),     
+                dim=-1
+            )
+            similarities.append(sim.cpu()) 
+            torch.cuda.empty_cache()
+    similarities = torch.cat(similarities, dim=1) 
+    return similarities
 
 #mode = 'img'
 mode = 'entropy'
@@ -44,7 +52,7 @@ print(f"target_embs: {target_embs.shape}, vaild_embs: {vaild_embs.shape}")
 similarity = F.cosine_similarity(
     target_embs.unsqueeze(1),  # [N, 1, D]
     vaild_embs.unsqueeze(0),   # [1, M, D]
-    dim=-1
+    batch_size=1000 
 )  # [N, M]
 
 sim_map = similarity.mean(dim=0).cpu().numpy()
