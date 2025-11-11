@@ -87,17 +87,17 @@ class LoadDataset(Dataset):
 
         for img in imgs:
             img = img[np.newaxis, ...].astype(np.float32)
-            img = self._crop_nonzero_region(img)
+            img = self.crop_nonzero_region(img)
             if mode == 'entropy':
-                img = self._cal_entropy(img, device, window_size, num_bins, tile_size=2048)
-            patches = self._split_into_patches(img, patch_size)
+                img = self.cal_entropy(img, device, window_size, num_bins, tile_size=2048)
+            patches = self.split_into_patches(img, patch_size)
             self.patches.append(patches)
         self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
         self.patches = torch.tensor(self.patches, device='cuda') # cpu to gpu
         if mode == 'img':
             self.patches = self.patches.float() / self.patches.max()
             
-    def _crop_nonzero_region(self, img):
+    def crop_nonzero_region(self, img):
         mask = img.sum(axis=0)
         rows = np.any(mask != 0 , axis=1)
         cols = np.any(mask != 0, axis=0)
@@ -111,7 +111,7 @@ class LoadDataset(Dataset):
         cropped = img[:, rmin:rmax+1, cmin:cmax+1]
         return cropped
 
-    def _split_into_patches(self, img, patch_size):
+    def split_into_patches(self, img, patch_size):
         _, H, W = img.shape
 
         H_cropped = H - (H % patch_size)
@@ -131,7 +131,7 @@ class LoadDataset(Dataset):
 
         return patches
 
-    def _cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32, tile_size=2048):
+    def cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32, tile_size=2048):
         tensor = torch.from_numpy(img).float().to(device)
         tensor = tensor / tensor.max()
         tensor = tensor.unsqueeze(0)  # [1,1,H,W]
@@ -194,3 +194,41 @@ class LoadDataset(Dataset):
     def __getitem__(self, idx):
         patch = self.patches[idx]
         return torch.tensor(patch)  # [C, patch, patch]
+
+Class VaildStep:
+    def valid_patchs(mode='img', device='cuda', patch_size: int=64, window_size=9, num_bins=32):
+        (img1, profile1) = read_img(K3.main_dir1, K3.jgw_name1, K3.b_tif_name1);
+        (img2, profile2) = read_img(K5.main_dir1, K5.jgw_name1, K5.r_tif_name1);
+        target_patches = _preprocess(mode, img1, device, patch_size, window_size, num_bins)
+        vaild_patches = _preprocess(mode, img2, device, patch_size, window_size, num_bins)
+
+        return target_patches, vaild_patches
+
+    def _preprocess(mode='img', img: np.ndarray, device='cuda', patch_size: int=64, window_size=9, num_bins=32):
+        img = img[np.newaxis, ...].astype(np.float32)
+        img = LoadDataset.crop_nonzero_region(img)
+        if mode == 'entropy':
+            img = LoadDataset.cal_entropy(img, device, window_size, num_bins, tile_size=2048)
+
+        _, H, W = img.shape
+
+        H_cropped = H - (H % patch_size)
+        W_cropped = W - (W % patch_size)
+        img_cropped = img[:, :H_cropped, :W_cropped]
+
+        patches = []
+        for i in range(0, H_cropped, patch_size):
+            for j in range(0, W_cropped, patch_size):
+                patch = img_cropped[:, i:i+patch_size, j:j+patch_size]
+                patches.append(patch)
+
+        patches = np.stack(patches, axis=0)  # [N, C, patch_size, patch_size]
+
+        if patches.shape[1] == 1:
+            patches = patches[:, 0, :, :]  # [N, patch_size, patch_size]
+
+        patches = torch.tensor(patches, device='cuda')
+        if mode == 'img':
+            self.patches = self.patches.float() / self.patches.max()
+
+        return patches 

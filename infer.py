@@ -1,5 +1,6 @@
 import torch
 from model import EncoderModel
+from data import VaildStep 
 
 @torch.no_grad()
 def infer_forward(model, tensor, device):
@@ -16,3 +17,15 @@ def cosine_similarity(z1, z2):
     return cos_sim.mean().item()
 
 
+#mode = 'img'
+mode = 'entropy'
+model_path = "../checkpoints/entropy_300.pt"
+
+device = torch.device("cuda")
+model = EncoderModel(patch_size=64, emb_dim=128)
+model.load_state_dict(torch.load(model_path, map_location=device))
+
+model.to(device)
+model.eval() 
+
+target_patches, vaild_patches = VaildStep.valid_patchs

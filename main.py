@@ -1,7 +1,6 @@
 from data import LoadDataset
 from model import EncoderModel
 from train import train
-from infer import infer_forward
 
 import os
 from tqdm import tqdm
