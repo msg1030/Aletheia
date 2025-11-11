@@ -138,7 +138,7 @@ class LoadDataset(Dataset):
 
         _, _, H, W = tensor.shape
         pad = window_size // 2
-        overlap = pad
+        overlap = pad 
 
         entropy_full = torch.zeros((H, W), device=device)
         count_full = torch.zeros((H, W), device=device)
@@ -152,7 +152,7 @@ class LoadDataset(Dataset):
 
                 tile = tensor[:, :, y1:y2, x1:x2]
                 unfolded = F.unfold(tile, kernel_size=window_size, padding=pad)
-                local_patches = unfolded.squeeze(0).T.contiguous()  # [H*W, K*K]
+                local_patches = unfolded.squeeze(0).T.contiguous()
 
                 bins = torch.linspace(0, 1, num_bins + 1, device=device)
                 hist = torch.bucketize(local_patches, bins) - 1
@@ -172,20 +172,21 @@ class LoadDataset(Dataset):
                 y_end = h_tile - overlap if y2 < H else h_tile
                 x_end = w_tile - overlap if x2 < W else w_tile
 
-                yf1 = y + y_start
-                xf1 = x + x_start
-                yf2 = y + y_start + (y_end - y_start)
-                xf2 = x + x_start + (x_end - x_start)
+                yf1 = min(y + y_start, H)
+                xf1 = min(x + x_start, W)
+                yf2 = min(yf1 + (y_end - y_start), H)
+                xf2 = min(xf1 + (x_end - x_start), W)
 
-                entropy_full[yf1:yf2, xf1:xf2] += entropy_tile[y_start:y_end, x_start:x_end]
+                entropy_crop = entropy_tile[y_start:y_start + (yf2 - yf1), x_start:x_start + (xf2 - xf1)]
+
+                entropy_full[yf1:yf2, xf1:xf2] += entropy_crop
                 count_full[yf1:yf2, xf1:xf2] += 1
 
-                del tile, unfolded, local_patches, hist, Ht, entropy_tile
+                del tile, unfolded, local_patches, hist, Ht, entropy_tile, entropy_crop
                 torch.cuda.empty_cache()
 
         entropy_full /= (count_full + 1e-9)
         return entropy_full.cpu().numpy()
-
 
     def __len__(self):
         return len(self.patches)
