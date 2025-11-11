@@ -1,20 +1,36 @@
 import torch
-import torchvision.transforms.functional as TF
+import torch.nn.functional as F
 from model import EncoderModel, contrastive_loss
 
-def augment_patch(patch):
-    if torch.rand(1, device=patch.device) < 0.5:
-        patch = torch.flip(patch, dims=[2])  # horizontal flip
-    if torch.rand(1, device=patch.device) < 0.5:
-        patch = torch.flip(patch, dims=[1])  # vertical flip
-    
-    if torch.rand(1, device=patch.device) < 0.5:
-        angle = torch.empty(1).uniform_(0, 360).item()
-        patch = TF.rotate(patch, angle, interpolation=TF.InterpolationMode.BILINEAR)
+def augment_patch(batch):
+    # batch: (B, H, W)
+    B, H, W = batch.shape
+    patches = batch.unsqueeze(1).clone()
 
-    patch = patch + 0.01 * torch.randn_like(patch)
+        # horizontal flip
+    mask = torch.rand(B, device=batch.device) < 0.5
+    patches[mask] = torch.flip(patches[mask], dims=[3]) 
 
-    return patch
+    # vertical flip
+    mask = torch.rand(B, device=batch.device) < 0.5
+    patches[mask] = torch.flip(patches[mask], dims=[2])
+
+    # random rotation
+    mask = torch.rand(B, device=batch.device) < 0.5
+    if mask.any():
+        angles = (torch.rand(mask.sum(), device=batch.device) * 360) * torch.pi / 180
+        theta = torch.zeros(mask.sum(), 2, 3, device=batch.device)
+        theta[:, 0, 0] = torch.cos(angles)
+        theta[:, 0, 1] = -torch.sin(angles)
+        theta[:, 1, 0] = torch.sin(angles)
+        theta[:, 1, 1] = torch.cos(angles)
+        grid = F.affine_grid(theta, patches[mask].size(), align_corners=False)
+        patches[mask] = F.grid_sample(patches[mask], grid, mode='bilinear', padding_mode='border', align_corners=False)
+
+    # gaussian noise
+    patches = patches + 0.01 * torch.randn_like(patches)
+
+    return patches.squeeze(1) 
 
 def step_train(model, batch, optimizer, device):
     model.train()
