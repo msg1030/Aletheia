@@ -10,10 +10,10 @@ import numpy as np
 
 #mode = 'img' 
 mode = 'entropy'
-patch_size = 64
-window_size = 9
-num_bins = 16
-emb_dim = 64
+patch_size = 256 
+window_size = 25
+num_bins = 128
+emb_dim = 256
 epochs = 300
 batch_size = 40000
 num_workers = 0 
