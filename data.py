@@ -100,7 +100,9 @@ class LoadDataset(Dataset):
             
         self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
         self.patches = torch.tensor(self.patches, device='cuda').float() # cpu to gpu
-        
+
+        self._check_preprocessing(mode)
+
     def crop_nonzero_region(self, img):
         mask = img.sum(axis=0)
         rows = np.any(mask != 0 , axis=1)
@@ -115,6 +117,31 @@ class LoadDataset(Dataset):
         cropped = img[:, rmin:rmax+1, cmin:cmax+1]
         return cropped
 
+    def _check_preprocessing(self, mode):
+        print("\n===== PATCH DATA CHECK =====")
+        p = self.patches
+
+        print(f"mode: {mode}")
+        print(f"patches shape: {tuple(p.shape)}")
+        print(f"dtype: {p.dtype}, device: {p.device}")
+        print(f"global min: {p.min().item():.6f}, global max: {p.max().item():.6f}")
+        print(f"mean: {p.mean().item():.6f}, std: {p.std().item():.6f}")
+
+        idxs = [0, len(p)//2, len(p)-1]
+        for i in idxs:
+            p_i = p[i]
+            print(f"patch {i:4d}: min={p_i.min().item():.6f}, max={p_i.max().item():.6f}, mean={p_i.mean().item():.6f}")
+
+        if mode == 'entropy':
+            print("\n===== ENTROPY STAT CHECK =====")
+            e_min, e_max = p.min().item(), p.max().item()
+            if e_max > 6 or e_min < 0:
+                print("Warning: entropy range seems abnormal.")
+            else:
+                print("Entropy range within expected limits (0–log2(num_bins))")
+
+        print("Preprocessing check complete.\n")
+    
     def split_into_patches(self, img, patch_size):
         _, H, W = img.shape
 
