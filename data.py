@@ -91,12 +91,16 @@ class LoadDataset(Dataset):
             if mode == 'entropy':
                 img = self.cal_entropy(img, device, window_size, num_bins, tile_size=2048)
             patches = self.split_into_patches(img, patch_size)
-            self.patches.append(patches)
-        self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
-        self.patches = torch.tensor(self.patches, device='cuda') # cpu to gpu
-        if mode == 'img':
-            self.patches = self.patches.float() / self.patches.max()
+
+            patches_min = patches.reshape(patches.shape[0], -1).min(axis=1)[:, None, None]
+            patches_max = patches.reshape(patches.shape[0], -1).max(axis=1)[:, None, None]
+            patches = (patches - patches_min) / (patches_max - patches_min + 1e-9)
             
+            self.patches.append(patches)
+            
+        self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
+        self.patches = torch.tensor(self.patches, device='cuda').float() # cpu to gpu
+        
     def crop_nonzero_region(self, img):
         mask = img.sum(axis=0)
         rows = np.any(mask != 0 , axis=1)
@@ -132,7 +136,6 @@ class LoadDataset(Dataset):
         return patches
 
     def cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32, tile_size=2048):
-        tensor = torch.from_numpy(img).float().to(device)
         tensor = tensor / tensor.max()
         tensor = tensor.unsqueeze(0)  # [1,1,H,W]
 
@@ -231,6 +234,12 @@ class VaildStep:
 
         patches = torch.tensor(patches, device='cuda')
         if mode == 'img':
-            patches = patches.float() / patches.max()
-
+            patches_norm = []
+            for patch in patches:
+                p_min = patch.min()
+                p_max = patch.max()
+                patch_norm = (patch - p_min) / (p_max - p_min + 1e-9)
+                patches_norm.append(patch_norm)
+        patches = torch.stack(patches_norm).float().to(device)
+        
         return patches 
