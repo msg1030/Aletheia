@@ -22,7 +22,7 @@ mode = 'entropy'
 model_path = "../checkpoints/entropy_300.pt"
 
 device = torch.device("cuda")
-model = EncoderModel(patch_size=64, emb_dim=128)
+model = EncoderModel(patch_size=64, emb_dim=64)
 model.load_state_dict(torch.load(model_path, map_location=device))
 
 model.to(device)
