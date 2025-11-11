@@ -24,6 +24,9 @@ def step_train(model, batch, optimizer, device):
     z1 = model(patch1)
     z2 = model(patch2)
 
+    z1 = torch.nn.functional.normalize(z1, dim=-1)
+    z2 = torch.nn.functional.normalize(z2, dim=-1)
+
     loss = contrastive_loss(z1, z2)
     optimizer.zero_grad()
     loss.backward()

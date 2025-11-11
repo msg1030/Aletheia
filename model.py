@@ -11,6 +11,7 @@ class PatchEmbed(nn.Module):
         x = x.unsqueeze(1) # [B, H, W] -> [B, 1, H, W]
         x = self.proj(x)
         x = x.flatten(2).transpose(1, 2)  # [B, N, D]
+        x = F.normalize(x, dim=-1)
         return x
 
 
