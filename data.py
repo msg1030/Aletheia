@@ -195,7 +195,7 @@ class LoadDataset(Dataset):
         patch = self.patches[idx]
         return torch.tensor(patch)  # [C, patch, patch]
 
-Class VaildStep:
+class VaildStep:
     def valid_patchs(mode='img', device='cuda', patch_size: int=64, window_size=9, num_bins=32):
         (img1, profile1) = read_img(K3.main_dir1, K3.jgw_name1, K3.b_tif_name1);
         (img2, profile2) = read_img(K5.main_dir1, K5.jgw_name1, K5.r_tif_name1);
