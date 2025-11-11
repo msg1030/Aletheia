@@ -206,9 +206,11 @@ class VaildStep:
 
     def _preprocess(img: np.ndarray, mode='img', device='cuda', patch_size: int=64, window_size=9, num_bins=32):
         img = img[np.newaxis, ...].astype(np.float32)
-        img = LoadDataset.crop_nonzero_region(img)
+
+        loader = LoadDataset()
+        img = loader.crop_nonzero_region(img)
         if mode == 'entropy':
-            img = LoadDataset.cal_entropy(img, device, window_size, num_bins, tile_size=2048)
+            img = loader.cal_entropy(img, device, window_size, num_bins, tile_size=2048)
 
         _, H, W = img.shape
 
