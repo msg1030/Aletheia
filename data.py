@@ -89,7 +89,7 @@ class LoadDataset(Dataset):
             img = img[np.newaxis, ...].astype(np.float32)
             img = self._crop_nonzero_region(img)
             if mode == 'entropy':
-                img = self._cal_entropy(img, window_size, num_bins)
+                img = self._cal_entropy(img, device, window_size, num_bins, tile_size=2048)
             patches = self._split_into_patches(img, patch_size)
             self.patches.append(patches)
         self.patches = np.concatenate(self.patches, axis=0)  # [patch_count, patch_size, patch_size]
@@ -131,38 +131,61 @@ class LoadDataset(Dataset):
 
         return patches
 
-    def _cal_entropy(self, img: np.ndarray, window_size=9, num_bins=32):
-        # input shape: [1, H, W]
-        tensor = torch.from_numpy(img).float() 
-        tensor = tensor / tensor.max()  # 0~1 normalization
-
-        pad = window_size // 2
+    def _cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32, tile_size=2048):
+        tensor = torch.from_numpy(img).float().to(device)
+        tensor = tensor / tensor.max()
         tensor = tensor.unsqueeze(0)  # [1,1,H,W]
-        unfolded = F.unfold(tensor, kernel_size=window_size, padding=pad)
-        local_patches = unfolded.squeeze(0).T.contiguous()  # [H*W, K*K]
 
-        step = 1024
-        entropy_list = []
+        _, _, H, W = tensor.shape
+        pad = window_size // 2
+        overlap = pad
 
-        bins = torch.linspace(0, 1, num_bins + 1)
+        entropy_full = torch.zeros((H, W), device=device)
+        count_full = torch.zeros((H, W), device=device)
 
-        for start in range(0, local_patches.shape[0], step):
-            end = min(start + step, local_patches.shape[0])
-            patch_chunk = local_patches[start:end, :]
+        for y in range(0, H, tile_size - 2 * overlap):
+            for x in range(0, W, tile_size - 2 * overlap):
+                y1 = max(0, y - overlap)
+                x1 = max(0, x - overlap)
+                y2 = min(H, y + tile_size + overlap)
+                x2 = min(W, x + tile_size + overlap)
 
-            hist = torch.bucketize(patch_chunk, bins) - 1
-            hist = hist.clamp(min=0, max=num_bins - 1)
+                tile = tensor[:, :, y1:y2, x1:x2]
+                unfolded = F.unfold(tile, kernel_size=window_size, padding=pad)
+                local_patches = unfolded.squeeze(0).T.contiguous()  # [H*W, K*K]
 
-            H = torch.zeros(patch_chunk.shape[0], num_bins)
-            H.scatter_add_(1, hist, torch.ones_like(hist, dtype=torch.float32))
-            H /= H.sum(dim=1, keepdim=True)
+                bins = torch.linspace(0, 1, num_bins + 1, device=device)
+                hist = torch.bucketize(local_patches, bins) - 1
+                hist = hist.clamp(min=0, max=num_bins - 1)
 
-            entropy_chunk = -(H * torch.log2(H + 1e-9)).sum(dim=1)
-            entropy_list.append(entropy_chunk)
+                Ht = torch.zeros(local_patches.shape[0], num_bins, device=device)
+                Ht.scatter_add_(1, hist, torch.ones_like(hist, dtype=torch.float32))
+                Ht /= Ht.sum(dim=1, keepdim=True)
+                entropy_tile = -(Ht * torch.log2(Ht + 1e-9)).sum(dim=1)
 
-        entropy = torch.cat(entropy_list, dim=0).view(tensor.shape[2], tensor.shape[3])
-        entropy = entropy.numpy()[np.newaxis, ...]
-        return entropy
+                h_tile = tile.shape[2]
+                w_tile = tile.shape[3]
+                entropy_tile = entropy_tile.view(h_tile, w_tile)
+
+                y_start = overlap if y > 0 else 0
+                x_start = overlap if x > 0 else 0
+                y_end = h_tile - overlap if y2 < H else h_tile
+                x_end = w_tile - overlap if x2 < W else w_tile
+
+                yf1 = y + y_start
+                xf1 = x + x_start
+                yf2 = y + y_start + (y_end - y_start)
+                xf2 = x + x_start + (x_end - x_start)
+
+                entropy_full[yf1:yf2, xf1:xf2] += entropy_tile[y_start:y_end, x_start:x_end]
+                count_full[yf1:yf2, xf1:xf2] += 1
+
+                del tile, unfolded, local_patches, hist, Ht, entropy_tile
+                torch.cuda.empty_cache()
+
+        entropy_full /= (count_full + 1e-9)
+        return entropy_full.cpu().numpy()
+
 
     def __len__(self):
         return len(self.patches)
