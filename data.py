@@ -185,7 +185,7 @@ class LoadDataset(Dataset):
                 del tile, unfolded, local_patches, hist, Ht, entropy_tile, entropy_crop
                 torch.cuda.empty_cache()
 
-        entropy_full /= (count_full + 1e-9)
+        entropy_full = (entropy_full / (count_full + 1e-9)).unsqueeze(0)
         return entropy_full.cpu().numpy()
 
     def __len__(self):
