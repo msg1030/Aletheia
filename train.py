@@ -49,5 +49,9 @@ def train(model, dataset, device, epochs=5, batch_size=2, lr=1e-4):
             total_loss += loss
 
         print(f"[Epoch {epoch+1}] Loss: {total_loss / (num_samples / batch_size):.4f}")
+        
+        log_file = "train_log.txt"
+        with open(log_file, "a") as f:
+            f.write(f"[Epoch {epoch+1}] Loss: {total_loss / (num_samples / batch_size):.4f}\n")
 
     return model
