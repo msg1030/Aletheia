@@ -65,10 +65,11 @@ similarity = cosine_similarity(target_embs, vaild_embs, batch_size=1000)
 
 sim_map = similarity.mean(dim=0).cpu().numpy()
 
-valid_rows = int(np.sqrt(vaild_patches.shape[0]))
-valid_cols = valid_rows
+N = sim_map.size
+side = int(np.ceil(np.sqrt(N)))
 
-sim_map_2d = sim_map.reshape(valid_rows, valid_cols)
+sim_map_2d = np.zeros((side, side), dtype=sim_map.dtype)
+sim_map_2d.flat[:N] = sim_map
 
 plt.figure(figsize=(6, 6))
 plt.imshow(sim_map_2d, cmap="hot")
