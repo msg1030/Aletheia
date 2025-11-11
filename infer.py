@@ -45,7 +45,8 @@ mode = 'entropy'
 model_path = "../checkpoints/entropy_300.pt"
 patch_size = 256
 emb_dim = 256
-
+window_size = 15
+num_bins = 128
 
 device = torch.device("cuda")
 model = EncoderModel(patch_size, emb_dim)
@@ -54,7 +55,7 @@ model.load_state_dict(torch.load(model_path, map_location=device))
 model.to(device)
 model.eval() 
 
-target_patches, vaild_patches = VaildStep.valid_patchs()
+target_patches, vaild_patches = VaildStep.valid_patchs(mode, device, patch_size, window_size, num_bins)
 
 target_embs = [infer_forward(model, patch, device) for patch in target_patches]
 vaild_embs  = [infer_forward(model, patch, device) for patch in vaild_patches]
