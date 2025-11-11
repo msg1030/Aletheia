@@ -42,7 +42,7 @@ def cosine_similarity(target_embs, vaild_embs, batch_size=1000):
 
 mode = 'img'
 #mode = 'entropy'
-model_path = "../checkpoints/img_300.pt"
+model_path = "../checkpoints/img_230.pt"
 patch_size = 64 
 emb_dim = 256
 window_size = 15
