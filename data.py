@@ -131,30 +131,29 @@ class LoadDataset(Dataset):
 
         return patches
 
-    def _cal_entropy(self, img: np.ndarray, device, window_size=9, num_bins=32):
-        # input shape : [1, H, W]
-        tensor = torch.from_numpy(img).float().to(device)
+    def _cal_entropy(self, img: np.ndarray, window_size=9, num_bins=32):
+        # input shape: [1, H, W]
+        tensor = torch.from_numpy(img).float() 
         tensor = tensor / tensor.max()  # 0~1 normalization
 
         pad = window_size // 2
         tensor = tensor.unsqueeze(0)  # [1,1,H,W]
-
         unfolded = F.unfold(tensor, kernel_size=window_size, padding=pad)
         local_patches = unfolded.squeeze(0).T.contiguous()  # [H*W, K*K]
 
-        step = 1024 
+        step = 1024
         entropy_list = []
 
-        bins = torch.linspace(0, 1, num_bins + 1, device=tensor.device)
+        bins = torch.linspace(0, 1, num_bins + 1)
 
         for start in range(0, local_patches.shape[0], step):
             end = min(start + step, local_patches.shape[0])
             patch_chunk = local_patches[start:end, :]
 
             hist = torch.bucketize(patch_chunk, bins) - 1
-            hist = hist.clamp(min=0, max=num_bins-1)
+            hist = hist.clamp(min=0, max=num_bins - 1)
 
-            H = torch.zeros(patch_chunk.shape[0], num_bins, device=tensor.device)
+            H = torch.zeros(patch_chunk.shape[0], num_bins)
             H.scatter_add_(1, hist, torch.ones_like(hist, dtype=torch.float32))
             H /= H.sum(dim=1, keepdim=True)
 
@@ -162,10 +161,7 @@ class LoadDataset(Dataset):
             entropy_list.append(entropy_chunk)
 
         entropy = torch.cat(entropy_list, dim=0).view(tensor.shape[2], tensor.shape[3])
-
-        entropy = entropy.cpu().numpy()  # [H,W]
-        entropy = entropy[np.newaxis, ...]  # [1,H,W]
-        
+        entropy = entropy.numpy()[np.newaxis, ...]
         return entropy
 
     def __len__(self):
