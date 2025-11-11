@@ -204,7 +204,7 @@ class VaildStep:
 
         return target_patches, vaild_patches
 
-    def _preprocess(mode='img', img: np.ndarray, device='cuda', patch_size: int=64, window_size=9, num_bins=32):
+    def _preprocess(img: np.ndarray, mode='img', device='cuda', patch_size: int=64, window_size=9, num_bins=32):
         img = img[np.newaxis, ...].astype(np.float32)
         img = LoadDataset.crop_nonzero_region(img)
         if mode == 'entropy':
