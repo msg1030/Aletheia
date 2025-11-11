@@ -6,7 +6,7 @@ def augment_patch(batch):
     # batch: (B, H, W)
     B, H, W = batch.shape
     patches = batch.unsqueeze(1).clone()
-
+    '''
         # horizontal flip
     mask = torch.rand(B, device=batch.device) < 0.5
     patches[mask] = torch.flip(patches[mask], dims=[3]) 
@@ -26,9 +26,9 @@ def augment_patch(batch):
         theta[:, 1, 1] = torch.cos(angles)
         grid = F.affine_grid(theta, patches[mask].size(), align_corners=False)
         patches[mask] = F.grid_sample(patches[mask], grid, mode='bilinear', padding_mode='border', align_corners=False)
-
+    '''
     # gaussian noise
-    patches = patches + 0.01 * torch.randn_like(patches)
+    patches = patches + 0.005 * torch.randn_like(patches)
 
     return patches.squeeze(1) 
 
