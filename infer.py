@@ -15,17 +15,29 @@ def infer_forward(model, tensor, device):
 
 def cosine_similarity(target_embs, vaild_embs, batch_size=1000):
     similarities = []
+    num_batches = (vaild_embs.size(0) + batch_size - 1) // batch_size
+
     with torch.no_grad():
-        for i in range(0, vaild_embs.size(0), batch_size):
-            v_batch = vaild_embs[i:i+batch_size]
+        for batch_idx in range(num_batches):
+            start = batch_idx * batch_size
+            end = min((batch_idx + 1) * batch_size, vaild_embs.size(0))
+            v_batch = vaild_embs[start:end]  # [B, D]
+
             sim = F.cosine_similarity(
-                target_embs.unsqueeze(1),  
-                v_batch.unsqueeze(0),     
+                target_embs.unsqueeze(1),   # [N, 1, D]
+                v_batch.unsqueeze(0),       # [1, B, D]
                 dim=-1
-            )
-            similarities.append(sim.cpu()) 
+            )  # [N, B]
+
+            similarities.append(sim.cpu())
             torch.cuda.empty_cache()
-    similarities = torch.cat(similarities, dim=1) 
+
+            progress = (batch_idx + 1) / num_batches * 100
+            print(f"\r[Processing] Batch {batch_idx + 1}/{num_batches} ({progress:.2f}%)", end="")
+
+    print("\nSimilarity computation complete")
+    similarities = torch.cat(similarities, dim=1)  # [N, M]
+    
     return similarities
 
 #mode = 'img'
@@ -49,11 +61,7 @@ vaild_embs  = torch.stack(vaild_embs)   # [M, D]
 
 print(f"target_embs: {target_embs.shape}, vaild_embs: {vaild_embs.shape}")
 
-similarity = F.cosine_similarity(
-    target_embs.unsqueeze(1),  # [N, 1, D]
-    vaild_embs.unsqueeze(0),   # [1, M, D]
-    batch_size=1000 
-)  # [N, M]
+similarity = cosine_similarity(target_embs, vaild_embs, batch_size=1000)
 
 sim_map = similarity.mean(dim=0).cpu().numpy()
 
